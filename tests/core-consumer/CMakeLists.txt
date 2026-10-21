@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.20)
+project(NewtCoreConsumer LANGUAGES CXX)
+find_package(Newt CONFIG REQUIRED)
+add_executable(core-consumer ../session_lifecycle_test.cpp)
+target_compile_options(core-consumer PRIVATE -UNDEBUG)
+target_link_libraries(core-consumer PRIVATE Newt::core)

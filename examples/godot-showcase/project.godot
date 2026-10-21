@@ -1,0 +1,52 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Newt Mac VR Showcase"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.4")
+
+[autoload]
+
+NewtSessionBridge="*res://addons/newt_bridge/session.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/newt_bridge/plugin.cfg")
+
+[newt]
+
+python_executable="/usr/bin/python3"
+auto_start=true
+executable=""
+distribution/runtime_manifest=""
+distribution/icd_manifest=""
+distribution/bundle_id="org.newt.newt-mac-vr-showcase"
+
+[physics]
+
+3d/run_on_separate_thread=true
+
+[rendering]
+
+rendering_device/driver.macos="vulkan"
+renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true
+
+[xr]
+
+openxr/enabled=true
+shaders/enabled=true

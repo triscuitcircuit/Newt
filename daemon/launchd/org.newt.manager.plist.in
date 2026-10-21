@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Newt session-manager launch agent (socket-activated, on demand).
+
+  launchd creates the Unix socket below at load time and starts `newtd serve`
+  on first connect; the daemon adopts that socket via launch_activate_socket
+  and never unlinks it. `newtd stop` exits the daemon process; the next
+  client connect starts a fresh one. Nothing runs (and no headset is claimed)
+  while nobody is connected.
+
+  Do not load this template directly: run daemon/install-launch-agent.sh,
+  which substitutes the paths for your user/install layout and bootstraps
+  the agent into gui/$UID.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>org.newt.manager</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>__NEWT_DAEMON_PATH__</string>
+		<string>serve</string>
+	</array>
+	<key>Sockets</key>
+	<dict>
+		<key>SessionSocket</key>
+		<dict>
+			<key>SockPathName</key>
+			<string>__NEWT_SESSION_SOCK__</string>
+			<key>SockPathMode</key>
+			<integer>384</integer>
+			<key>SockType</key>
+			<string>stream</string>
+		</dict>
+	</dict>
+	<!--
+	  Background would be the natural choice for an on-demand, idle-most-
+	  of-the-time job, but launchd's Background tier (see
+	  launchd.plist(5)) puts the whole process in XNU's lowest scheduling
+	  priority band -- measured here as ps(1) PRI 4, versus ~31 for a
+	  normal interactive process -- and that band is inherited by
+	  posix_spawn'd children (the dashboard and game NSTasks) unless they
+	  explicitly request otherwise. That is a direct cause of the ~14 fps
+	  manager-launched regression vs. a Terminal-launched run. Interactive
+	  keeps the on-demand socket-activation behavior (nothing runs, no
+	  headset is claimed, until a client connects) while giving the
+	  daemon and its children normal scheduling once something IS
+	  connected and rendering.
+	-->
+	<key>ProcessType</key>
+	<string>Interactive</string>
+	<key>StandardErrorPath</key>
+	<string>__NEWT_MANAGER_LOG__</string>
+</dict>
+</plist>

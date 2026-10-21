@@ -1,0 +1,5 @@
+@PACKAGE_INIT@
+include(CMakeFindDependencyMacro)
+find_dependency(OpenXR CONFIG)
+find_dependency(Vulkan)
+include("${CMAKE_CURRENT_LIST_DIR}/NewtTargets.cmake")

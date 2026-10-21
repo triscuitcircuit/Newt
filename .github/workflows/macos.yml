@@ -1,0 +1,151 @@
+name: macOS library and Godot addon
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  library:
+    name: Library (${{ matrix.arch }}, USB ${{ matrix.usb }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+            usb: 'ON'
+          - runner: macos-15
+            arch: arm64
+            usb: 'OFF'
+          - runner: macos-15-intel
+            arch: x86_64
+            usb: 'ON'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install build tools
+        run: brew install cmake ninja python pkg-config vulkan-headers vulkan-loader glslang libusb
+      - name: Fetch OpenXR SDK
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: KhronosGroup/OpenXR-SDK
+          ref: 105a2a674cd7aae85de8d6a43f2d2cbdaa80af60 # release-1.1.53
+          path: .deps/openxr
+          persist-credentials: false
+      - name: Build OpenXR loader
+        run: |
+          cmake -S .deps/openxr -B .deps/openxr-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/openxr" \
+            -DBUILD_TESTS=OFF -DBUILD_API_LAYERS=OFF
+          cmake --build .deps/openxr-build --parallel 3
+          cmake --install .deps/openxr-build
+      - name: Configure and build Newt
+        run: |
+          cmake -S . -B build-ci -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/openxr;$(brew --prefix)" \
+            -DVULKAN_SDK="$(brew --prefix)" \
+            -DVulkan_INCLUDE_DIR="$(brew --prefix vulkan-headers)/include" \
+            -DVulkan_LIBRARY="$(brew --prefix vulkan-loader)/lib/libvulkan.dylib" \
+            -DNEWT_WITH_USB=${{ matrix.usb }} -DBUILD_TESTING=ON
+          cmake --build build-ci --parallel 3
+      - name: Run hardware-free tests
+        run: ctest --test-dir build-ci --output-on-failure
+      - name: Verify installed CMake package
+        run: |
+          cmake --install build-ci --prefix "$RUNNER_TEMP/newt"
+          cmake -S tests/package-consumer -B build-consumer -G Ninja \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/newt;$RUNNER_TEMP/openxr;$(brew --prefix)" \
+            -DVulkan_INCLUDE_DIR="$(brew --prefix vulkan-headers)/include" \
+            -DVulkan_LIBRARY="$(brew --prefix vulkan-loader)/lib/libvulkan.dylib"
+          cmake --build build-consumer
+          ./build-consumer/consumer
+      - name: Verify core without dashboard sources
+        if: matrix.arch == 'arm64' && matrix.usb == 'OFF'
+        run: |
+          python3 tests/core_boundary_test.py \
+            -DCMAKE_PREFIX_PATH="$RUNNER_TEMP/openxr;$(brew --prefix)" \
+            -DVULKAN_SDK="$(brew --prefix)" \
+            -DVulkan_INCLUDE_DIR="$(brew --prefix vulkan-headers)/include" \
+            -DVulkan_LIBRARY="$(brew --prefix vulkan-loader)/lib/libvulkan.dylib"
+      - name: Archive development SDK
+        run: |
+          mkdir -p dist
+          cp docs/CI.md "$RUNNER_TEMP/newt/CI-NOTES.md"
+          tar -czf "dist/newt-macos-${{ matrix.arch }}-usb-${{ matrix.usb }}.tar.gz" -C "$RUNNER_TEMP/newt" .
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: newt-macos-${{ matrix.arch }}-usb-${{ matrix.usb }}
+          path: dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload newtd standalone
+        if: matrix.usb == 'ON'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: newtd-macos-${{ matrix.arch }}
+          path: ${{ runner.temp }}/newt/bin/newtd
+          if-no-files-found: error
+          retention-days: 14
+
+  godot-addon:
+    name: Godot addon package and integration
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Install Godot 4.4.1
+        run: |
+          base=https://github.com/godotengine/godot-builds/releases/download/4.4.1-stable
+          curl --fail --location --retry 3 "$base/Godot_v4.4.1-stable_macos.universal.zip" -o "$RUNNER_TEMP/godot.zip"
+          curl --fail --location --retry 3 "$base/SHA512-SUMS.txt" -o "$RUNNER_TEMP/godot-sums.txt"
+          python3 - <<'PY'
+          import hashlib, os, pathlib
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])
+          matches = [line.split()[0] for line in (root/'godot-sums.txt').read_text().splitlines()
+                     if line.strip() and line.split()[-1].lstrip('./*') == 'Godot_v4.4.1-stable_macos.universal.zip']
+          assert len(matches) == 1
+          assert hashlib.sha512((root/'godot.zip').read_bytes()).hexdigest() == matches[0]
+          PY
+          ditto -x -k "$RUNNER_TEMP/godot.zip" "$RUNNER_TEMP/godot"
+          mkdir -p "$RUNNER_TEMP/bin"
+          ln -s "$RUNNER_TEMP/godot/Godot.app/Contents/MacOS/Godot" "$RUNNER_TEMP/bin/godot"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Build addon ZIP
+        run: |
+          python3 tests/addon_package_test.py
+          python3 tools/package-godot-plugin.py
+      - name: Import example without XR
+        run: godot --headless --path examples/godot --xr-mode off --editor --import --quit --log-file "$RUNNER_TEMP/newt-godot-import.log"
+      - name: Test session manager and Godot bridge
+        run: |
+          command -v godot
+          # newtd is a single Foundation-only file; build it directly so
+          # this job needs no CMake/OpenXR/Vulkan toolchain.
+          mkdir -p "$RUNNER_TEMP/bin"
+          clang++ -x objective-c++ -fobjc-arc -framework Foundation \
+            -o "$RUNNER_TEMP/bin/newtd" daemon/newtd.mm
+          NEWTD="$RUNNER_TEMP/bin/newtd" python3 tests/session_manager_test.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: newt-godot-plugin
+          path: dist/newt-godot-plugin.zip
+          if-no-files-found: error
+          retention-days: 14
