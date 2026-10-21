@@ -1,0 +1,188 @@
+% Created 2026-10-21 Wed 01:35
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\documentclass[10pt,a4paper,showtrims]
+\hypersetup{colorlinks=true, urlcolor={blue}, linkcolor={blue}}
+\usepackage[labelfont=bf]{caption}
+\usepackage{tcolorbox}
+\author{Triscuitcircuit}
+\date{\today}
+\title{Newt\\\medskip
+\large A MacOS OpenXR/Vulkan Runtime Core}
+\hypersetup{
+ pdfauthor={Triscuitcircuit},
+ pdftitle={Newt},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 30.2 (Org mode 9.7.11)},
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\clearpage
+\begin{quote}
+Well she turned me into a newt.
+A newt?
+\ldots{} I got better.
+
+-- Monty Pyhton and the Holy Grail
+\end{quote}
+\section{Newt}
+\label{sec:org7f16d57}
+\section{About}
+\label{sec:orgd98eb26}
+\texttt{Newt} is a runtime wrapper for OpenXR, MoltenVK and Monado rendering under the MIT license.
+It is named after the Apple Newton, a device that was ahead of its time in many ways.
+
+Also, a Newt is \emph{not} a lizard, and this wrapper makes disconnecting from a certain walled garden just a bit easier.
+
+Newt is split into two systems:
+\begin{itemize}
+\item \texttt{Newt} ((\texttt{libnewt\_core.a}): A runtime library for communicating with Monando, OpenXR and MoltenVK
+\item \texttt{newtd}: A session-manager daemon for transfering to game engines
+\begin{itemize}
+\item (A few Godot examples are included in this repository, which include usage of the \texttt{Newt} bridge addon)
+\end{itemize}
+\end{itemize}
+\subsection{Capabilities}
+\label{sec:org99c01cb}
+\begin{itemize}
+\item OpenXR session lifecycle, controllers, and haptic output via the \texttt{Newt::Session} C++ API.
+\item GPU (IOSurface) texture import to Vulkan, with media capture built on top of it.
+\item The daemon, \texttt{Newtd}, handles one-owner headset supervision.
+\item An optional generic libusb module (\texttt{NEWT\_WITH\_USB=ON}).
+\item Initiate headset pairing on macOS.
+\end{itemize}
+\section{Installation}
+\label{sec:orgb948b55}
+Building Newt and configuring its headset runtime are separate steps. The OpenXR SDK supplies the \emph{loader}. The headset backend supplies a \emph{runtime}. Installing the loader does not create Newt's runtime configuration.
+\subsection{Requirements (from source build)}
+\label{sec:org7925b9e}
+\begin{itemize}
+\item MacOS, with Xcode Command line tools (\texttt{xcode-select -{}-{}install})
+\item CMAKE 3.20+ ( \href{https://cmake.org/}{CMAKE.org} or by \href{https://formulae.brew.sh/formula/cmake}{Homebrew})
+\item The \href{https://vulkan.lunarg.com/sdk/home}{Vulkan SDK} for MacOS, including \texttt{glslangValidator}
+\item An installed \href{https://github.com/KhronosGroup/OpenXR-SDK}{Khronos OpenXR SDK} and loader, with its CMake package
+\item \emph{Optional:} libusb + pkg-config, detected automatically ( \texttt{brew install libusb pkg-config} )
+\item A compatible external OpenXR runtime (Monando)
+\item Python (for automatic tests)
+\end{itemize}
+\begin{quote}
+{[}!NOTE]
+Do not set \texttt{VULKAN\_SDK} to \texttt{libMoltenVK.dylib}. Newt needs the SDK's \texttt{macOS} directory (headers, libraries, shader tools). Also, Newt's setup expects a runtime JSON manifest instead of just \texttt{libopenxr\_loader.dylib}.
+\end{quote}
+\subsection{Building and Installation}
+\label{sec:org9639605}
+The CMAKE build process is designed to find the SDKs. Specifically, it finds Vulkan with \texttt{/VulkanSDK} and OpenXR SDK under your \texttt{brew} install path. (\texttt{/opt/homebrew} or \texttt{/usr/local}).
+\begin{verbatim}
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/your/install/prefix -DBUILD_TESTING=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+cmake --install build
+\end{verbatim}
+This builds a static library of Newt (\texttt{libnewt\_core.a}) and the native \texttt{newtd} session-management Command Line Interface
+\subsubsection{Optional Commands}
+\label{sec:orgee35afe}
+\begin{itemize}
+\item \texttt{NEWT\_WITH\_USB=AUTO} for building with Libusb.
+\item \texttt{NEWT\_BUILD\_DAEMON=OFF} to skip building \texttt{newtd} entirely.
+\end{itemize}
+\subsubsection{Linking with CMAKE}
+\label{sec:org0ce0959}
+If you want to link against Newt with CMAKE, you can use  \texttt{find\_package(Newt CONFIG REQUIRED)} with \texttt{Newt::core}. .
+
+If OpenXR isn't under one of those curated prefixes, you can direct the build with: \texttt{-DOpenXR\_DIR=/path/to/folder/containing/OpenXRConfig.cmake} for one folder, or \texttt{-DNEWT\_SDK\_SEARCH\_PATH=/some/prefix} to search a whole path. You can also use the included Python code to find likely install locations.
+\begin{verbatim}
+python3 tools/find-libraries.py --root /path/to/sdk-sources
+\end{verbatim}
+\subsection{Configuring the runtime (one time)}
+\label{sec:org7f6f53b}
+Set \texttt{XR\_RUNTIME\_JSON} to the runtime manifest and configure the Vulkan loader (if the runtime requires it).
+\begin{verbatim}
+newt configure --runtime /path/to/runtime.json \
+               --icd /path/to/MoltenVK_icd.json
+# or, for a host provided dashboard executable (like PippinVR):
+newt configure --dashboard /path/to/host-dashboard \
+               --runtime /path/to/runtime.json \
+               --icd /path/to/MoltenVK_icd.json
+\end{verbatim}
+This can also be done when installing with CMAKE by passing  \texttt{-DNEWT\_CONFIGURE\_RUNTIME=/path/to/runtime.json} and the \texttt{cmake -{}-{}install} runs the equivalent \texttt{newt configure}.
+Configuration is stored in \texttt{\textasciitilde{}\textasciitilde{}/Library/Application Support/Newt/config.json}. From a source checkout, use the built daemon (\texttt{build/newtd}, installed as \texttt{newt}) in place of the installed \texttt{newt} command.
+
+In Godot, the same paths can be picked with \textbf{Project -> Tools ->  Configure Newt…}.
+\section{Embedding Newt}
+\label{sec:org2dc1f56}
+\subsection{The C++ API}
+\label{sec:org9beed48}
+As mentioned you can link \texttt{Newt::core}, and include \texttt{<Newt/Session.h>} in your code. \texttt{Newt::Session::Run(delegate)} owns the initialization process input polling, frame submission, and cleanup, synchronously, on the calling thread.
+
+\texttt{RequestStop()} may be called from another thread. The delegate hooks are:
+\begin{itemize}
+\item \texttt{OnSystem} (host policy checks)
+\item \texttt{OnReady} (allocate host resources)
+\item \texttt{OnInput}, \texttt{OnPrepareFrame} (upload content)
+\item \texttt{OnDrawEye} (draw inside an active render pass)
+\item \texttt{OnStopping} (release resources before the device is destroyed).
+\end{itemize}
+
+Logging can be routed to the host through \texttt{include/NewtLog.h}. However, if no logging handler is installed, the output will go to stdout.
+\section{Design}
+\label{sec:orgfa898cb}
+Newt is split into a product-neutral runtime core and into different layers off the core.
+
+\begin{center}
+\begin{tabular}{ll}
+Component & Responsibility\\
+\hline
+Core (\texttt{newt\_core}, \texttt{Newt::core}) & OpenXR session lifecycle, tracking/controller input, haptic output, Vulkan resources, swapchains, frame submission, GPU (IOSurface) texture import.\\
+Session manager (\texttt{daemon/newtd.mm}, binary \texttt{newtd}) & One-owner supervision of a game and a host's dashboard,Game engine handoff, developer and standalone bundles.\\
+External runtime (e.g. Monado + MoltenVK) & Headset USB transport and graphics translation to Metal.\\
+\end{tabular}
+\end{center}
+
+
+OpenXR swapchain images are borrowed and never destroyed by Newt.
+\subsection{Known Issues}
+\label{sec:orgde0f8b8}
+\begin{itemize}
+\item Every dashboard to  game handoff (and vice versa) requires different USB pairing headset requests.
+\item Headset USB audio is not implemented.
+\item A Godot game launched through the manager loads two independent MoltenVK copies into one proces.
+\end{itemize}
+\section{Testing}
+\label{sec:org7161a33}
+Build with \texttt{BUILD\_TESTING=ON} (the installer does), then:
+\begin{verbatim}
+ctest --test-dir build --output-on-failure
+python3 tests/session_manager_test.py
+\end{verbatim}
+The suites cover session lifecycle, the session-manager protocol against fake children (including the no-dashboard-configured path), optional-USB error cleanup, and a core-boundary check (fresh install, consumed by a plain C++ program with no product UI anywhere in the tree). None of them start VR, open a camera, or claim a USB device. The manager suite needs permission to create local Unix sockets.
+\section{Contributing}
+\label{sec:org194cf40}
+Contributions are welcome, and keep Newt free of vendored binaries — see \texttt{DEPENDENCIES.md}.
+
+This project will take contributions in the form of pull-requests.
+\section{License}
+\label{sec:org0c8fbd7}
+MIT License. See \texttt{LICENSE}.
+\subsection{Libraries used}
+\label{sec:org0043671}
+\begin{itemize}
+\item OpenXR SDK/loader (Apache-2.0/MIT)
+\item Vulkan/MoltenVK (Apache-2.0)
+\item (optional and dynamically linked) libusb (LGPL-2.1-or-later)
+\end{itemize}
+\end{document}

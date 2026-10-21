@@ -1,0 +1,98 @@
+#+AUTHOR: Triscuitcircuit
+#+DATE: \today
+#+LaTeX_HEADER: \documentclass[10pt,a4paper,showtrims]
+#+LaTeX_HEADER: \hypersetup{colorlinks=true, urlcolor={blue}, linkcolor={blue}}
+
+#+LaTex_HEADER: \usepackage[labelfont=bf]{caption}
+
+#+LaTeX_HEADER: \usepackage{tcolorbox}
+#+OPTIONS: h:3
+#+STARTUP: inlineimages
+#+TITLE: Newt Mac VR Showcase
+#+latex: \clearpage
+
+A native Godot 4 OpenXR demo for Mac: one small island, three stations,
+built entirely in code from primitives — no imported assets. It exists to
+show what Mac-native VR through OpenXR (Godot's Vulkan renderer on a local
+runtime such as the Monado Quest Link driver) can do today, and to exercise
+the Newt session-manager handoff end to end.
+
+For the minimal starter project, see [[file:../godot][~../godot~]]. This is the
+bigger sibling.
+
+* What's in the scene
+- *The Atrium* — emissive crystal spire, counter-rotating metallic rings,
+  a GPU particle fountain, procedural sky, and a day/dusk lighting toggle
+  with animated transitions.
+- *Physics Yard* — a crate pyramid, bouncy balls, and a seesaw plank.
+  Grab any prop with the grip, carry it, throw it with real hand velocity.
+- *Target Range* — five floating targets on animated paths that speed up
+  as you score, ray shooting with haptic pulses and generated sound effects.
+- *Control pedestal* — physical 3D buttons: Spawn Ball, Reset Physics,
+  Dusk/Day, and Teleport on/off.
+- *Everywhere* — 140-instance MultiMesh scatter in one draw call, dynamic
+  shadows, ACES tonemapping with glow, fog, and a wrist HUD with live
+  score/shots/FPS.
+
+* Controls
+| Input                                | Action                                     |
+|---------------------------------------+---------------------------------------------|
+| Left thumbstick                      | Smooth move (or nothing in teleport mode)  |
+| Right thumbstick ↔                   | Snap turn 45°                              |
+| Right thumbstick ↑ (teleport mode)   | Aim teleport arc, release to jump          |
+| Trigger                              | Shoot targets / press 3D buttons           |
+| Grip (near a prop)                   | Grab · release to throw                    |
+| Menu button                          | Pause panel: Resume, or Quit to Newt       |
+
+Quitting follows the Newt cooperative convention: the game exits its
+process and the session manager restores the Newt dashboard.
+
+Desktop preview (no headset): the camera slowly orbits the island.
+~Esc~ opens the pause panel, ~Q~ quits from it.
+
+* Run it
+Requirements match the [[file:../godot][minimal example]]: Godot 4.4 with OpenXR +
+Vulkan on macOS, a compatible separately-supplied OpenXR runtime, matching
+architectures, and an awake headset with no other app owning the session.
+
+*Editor Play (recommended):* open this folder in Godot, configure Newt
+once via *Project → Tools → Configure Newt…*, press Play. The bundled
+Newt Play Bridge starts/reuses the session manager, reserves the headset,
+and restores the dashboard on Stop. See [[file:../../docs/GODOT-PLAY.md][~docs/GODOT-PLAY.md~]].
+
+*Session manager CLI:*
+#+begin_src sh
+  # After building Newt (or use the installed `newt` command):
+  ../../build/newtd run --project "$PWD"
+#+end_src
+
+*Direct launcher (no Newt):*
+#+begin_src sh
+  python3 launch.py --runtime /absolute/path/to/runtime.json --godot /path/to/Godot
+#+end_src
+
+* Validate without a headset
+#+begin_src sh
+  godot --headless --path . --import
+  godot --headless --path . -s tests/showcase_smoke.gd
+#+end_src
+The smoke test instantiates the real scene in desktop-preview mode and
+drives every pedestal action, a scoring shot, and the pause flow. It
+validates scripts and scene assembly only. OpenXR initialization,
+controller bindings, frame timing, USB transport, and comfort still need a
+hardware run — that part is honestly unverified until someone puts the
+headset on.
+
+* Layout
+| File                        | Role                                               |
+|------------------------------+-----------------------------------------------------|
+| ~main.gd~                    | World building, stations, scoring, pause, day/dusk |
+| ~scripts/player_rig.gd~      | Hands, rays, locomotion, teleport, grabbing, HUD   |
+| ~scripts/factory.gd~         | Materials, props, 3D buttons, signs                |
+| ~scripts/sound_bank.gd~      | Procedural WAV sound effects (no assets)           |
+| ~tests/showcase_smoke.gd~    | Headless interaction smoke test                    |
+| ~addons/newt_bridge/~        | Newt Play Bridge (installed, do not edit here)     |
+
+Godot owns its OpenXR session here — ~Newt_Run()~ is never called inside
+the game. Newt's role is the dashboard/launcher around it and the
+one-owner handoff, exactly as in the minimal example.

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cgwpm67dcjqu3"]
+
+[ext_resource type="Script" uid="uid://bw215t7rmgvmn" path="res://main.gd" id="1"]
+
+[node name="NewtShowcase" type="Node3D"]
+script = ExtResource("1")

@@ -1,0 +1,51 @@
+# CMake build trees and local install/dependency staging
+/build*/
+/cmake-build-*/
+/out/
+/install/
+/stage/
+/.deps/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+Testing/
+compile_commands.json
+CMakeUserPresets.json
+
+# Compiled products and generated distribution archives
+/dist/
+*.o
+*.obj
+*.a
+*.dylib
+*.so
+*.dSYM/
+*.app/
+*.spv
+
+# Godot imports and local editor state (keep source .uid files)
+.godot/
+.import/
+export_credentials.cfg
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Machine/editor state
+.DS_Store
+._*
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.log
+.env
+.env.*
+!.env.example
