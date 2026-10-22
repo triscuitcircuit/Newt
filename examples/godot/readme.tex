@@ -1,4 +1,4 @@
-% Created 2026-10-21 Wed 01:47
+% Created 2026-10-21 Wed 19:48
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -24,7 +24,7 @@
  pdftitle={macOS OpenXR game example},
  pdfkeywords={},
  pdfsubject={},
- pdfcreator={Emacs 30.2 (Org mode 9.7.11)},
+ pdfcreator={Emacs 30.2 (Org mode 9.7.11)}, 
  pdflang={English}}
 \begin{document}
 
@@ -35,7 +35,7 @@
 
 A small target game: aim a tracked controller at the sphere and squeeze the trigger to score. The camera and targets use world coordinates; the game does not move the world with head rotation. There is no artificial locomotion.
 \section{Requirements}
-\label{sec:org2b46042}
+\label{sec:org6191da0}
 \begin{itemize}
 \item Godot 4 with the OpenXR module and Vulkan renderer available on macOS. An engine built without XR will not work; if building from source, enable \texttt{module\_openxr\_enabled=yes} and \texttt{disable\_xr=no}.
 \item A compatible, separately supplied macOS OpenXR runtime providing Vulkan graphics, tracked headset/controllers, and a working USB headset transport.
@@ -45,7 +45,7 @@ A small target game: aim a tracked controller at the sphere and squeeze the trig
 
 This example uses the engine's default OpenXR action map, including \texttt{trigger}, \texttt{left\_hand}, \texttt{right\_hand}, and aim poses. If you customize it, retain these actions/bindings or update the script.
 \section{Run}
-\label{sec:orgd2d3a71}
+\label{sec:org058a7e5}
 \begin{verbatim}
 python3 launch.py --runtime /absolute/path/to/runtime.json --godot /path/to/Godot.app/Contents/MacOS/Godot
 \end{verbatim}
@@ -53,14 +53,14 @@ Add \texttt{-{}-{}icd /absolute/path/to/MoltenVK\_icd.json} if your runtime depl
 
 The launcher uses argument arrays, validates the manifest, and sets the runtime before starting the engine. OpenXR and XR shaders are enabled in project settings. Use Mobile + Vulkan for this runtime path rather than the native Metal renderer.
 \section{How Newt fits}
-\label{sec:orgfd837eb}
+\label{sec:org878d55f}
 Godot owns its OpenXR session and render loop. \textbf{Do not call \texttt{Newt\_Run()} inside this Godot game:} Newt's current dashboard also owns a session and rendering loop. Use the dashboard as a separate launcher and hand off the headset to Godot. This example uses the external runtime directly; it does not embed Newt's dashboard.
 
 \texttt{Newt::usb} is available to native host tools for generic USB operations. Do not claim the headset's USB interface from a game while its runtime owns it. libusb transport alone does not implement Quest pairing, tracked poses, encoded video or timewarp.
 
 Embedding Newt panels directly in Godot would need a new GDExtension that exposes capture frames and panel state as Godot textures/nodes, uses Godot's existing OpenXR session, and avoids starting Newt's own Vulkan renderer. That adapter is not implemented here.
 \section{Bundle an exported macOS game}
-\label{sec:orge359c95}
+\label{sec:orge99d38e}
 A deployment layout can be:
 \begin{verbatim}
 Game.app/Contents/
@@ -81,15 +81,15 @@ Game.app/Contents/
 
 Do not assume changing a build flag removes GPL code: audit the actual runtime artifact. Newt's MIT license does not relicense runtime code or libusb.
 \section{Validation status}
-\label{sec:org5f950a4}
+\label{sec:org2f8a168}
 The project can be imported and run without XR for script/scene checks. A successful desktop check does not validate Vulkan/OpenXR initialization, controller bindings, frame timing, USB transport, or headset audio. Those need a hardware run with the selected engine/runtime combination.
 \section{References}
-\label{sec:org2149b18}
+\label{sec:org1bff404}
 \begin{itemize}
 \item \href{https://docs.godotengine.org/en/stable/tutorials/xr/setting\_up\_xr.html}{Godot XR setup}
 \item \href{https://github.com/godotengine/godot/blob/master/modules/openxr/config.py}{Godot OpenXR build configuration}
 \end{itemize}
 \section{Editor Play integration}
-\label{sec:orgbba78e6}
-Use the \href{../../docs/GODOT-PLAY.md}{Newt Play Bridge plugin} to discover/start Newt automatically on Play, hand off the headset, and return after the game exits. The session manager also creates development app bundles that reuse the installed runtime.
+\label{sec:org271ada3}
+Use the Newt Play Bridge plugin to discover/start Newt automatically on Play, hand off the headset, and return after the game exits. The session manager also creates development app bundles that reuse the installed runtime.
 \end{document}

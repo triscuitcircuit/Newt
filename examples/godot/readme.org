@@ -63,4 +63,4 @@ The project can be imported and run without XR for script/scene checks. A succes
 - [[https://github.com/godotengine/godot/blob/master/modules/openxr/config.py][Godot OpenXR build configuration]]
 
 * Editor Play integration
-Use the [[file:../../docs/GODOT-PLAY.md][Newt Play Bridge plugin]] to discover/start Newt automatically on Play, hand off the headset, and return after the game exits. The session manager also creates development app bundles that reuse the installed runtime.
+Use the Newt Play Bridge plugin to discover/start Newt automatically on Play, hand off the headset, and return after the game exits. The session manager also creates development app bundles that reuse the installed runtime.

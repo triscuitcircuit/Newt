@@ -1,18 +1,18 @@
 
 # Table of Contents
 
-1.  [Requirements](#org70e246d)
-2.  [Run](#org1ab8285)
-3.  [How Newt fits](#org8206215)
-4.  [Bundle an exported macOS game](#org5f93939)
-5.  [Validation status](#orgfe7ecb0)
-6.  [References](#org468a0cb)
-7.  [Editor Play integration](#orgca2595e)
+1.  [Requirements](#orge40b2d4)
+2.  [Run](#orgf55c046)
+3.  [How Newt fits](#orgf046c27)
+4.  [Bundle an exported macOS game](#orgbe801c8)
+5.  [Validation status](#org98f075e)
+6.  [References](#org48ced5e)
+7.  [Editor Play integration](#org6d9e167)
 
 A small target game: aim a tracked controller at the sphere and squeeze the trigger to score. The camera and targets use world coordinates; the game does not move the world with head rotation. There is no artificial locomotion.
 
 
-<a id="org70e246d"></a>
+<a id="orge40b2d4"></a>
 
 # Requirements
 
@@ -24,7 +24,7 @@ A small target game: aim a tracked controller at the sphere and squeeze the trig
 This example uses the engine's default OpenXR action map, including `trigger`, `left_hand`, `right_hand`, and aim poses. If you customize it, retain these actions/bindings or update the script.
 
 
-<a id="org1ab8285"></a>
+<a id="orgf55c046"></a>
 
 # Run
 
@@ -35,7 +35,7 @@ Add `--icd /absolute/path/to/MoltenVK_icd.json` if your runtime deployment requi
 The launcher uses argument arrays, validates the manifest, and sets the runtime before starting the engine. OpenXR and XR shaders are enabled in project settings. Use Mobile + Vulkan for this runtime path rather than the native Metal renderer.
 
 
-<a id="org8206215"></a>
+<a id="orgf046c27"></a>
 
 # How Newt fits
 
@@ -46,7 +46,7 @@ Godot owns its OpenXR session and render loop. **Do not call `Newt_Run()` inside
 Embedding Newt panels directly in Godot would need a new GDExtension that exposes capture frames and panel state as Godot textures/nodes, uses Godot's existing OpenXR session, and avoids starting Newt's own Vulkan renderer. That adapter is not implemented here.
 
 
-<a id="org5f93939"></a>
+<a id="orgbe801c8"></a>
 
 # Bundle an exported macOS game
 
@@ -69,14 +69,14 @@ A deployment layout can be:
 Do not assume changing a build flag removes GPL code: audit the actual runtime artifact. Newt's MIT license does not relicense runtime code or libusb.
 
 
-<a id="orgfe7ecb0"></a>
+<a id="org98f075e"></a>
 
 # Validation status
 
 The project can be imported and run without XR for script/scene checks. A successful desktop check does not validate Vulkan/OpenXR initialization, controller bindings, frame timing, USB transport, or headset audio. Those need a hardware run with the selected engine/runtime combination.
 
 
-<a id="org468a0cb"></a>
+<a id="org48ced5e"></a>
 
 # References
 
@@ -84,8 +84,9 @@ The project can be imported and run without XR for script/scene checks. A succes
 -   [Godot OpenXR build configuration](https://github.com/godotengine/godot/blob/master/modules/openxr/config.py)
 
 
-<a id="orgca2595e"></a>
+<a id="org6d9e167"></a>
 
 # Editor Play integration
 
-Use the [Newt Play Bridge plugin](../../docs/GODOT-PLAY.md) to discover/start Newt automatically on Play, hand off the headset, and return after the game exits. The session manager also creates development app bundles that reuse the installed runtime.
+Use the Newt Play Bridge plugin to discover/start Newt automatically on Play, hand off the headset, and return after the game exits. The session manager also creates development app bundles that reuse the installed runtime.
+

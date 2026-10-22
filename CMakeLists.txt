@@ -27,7 +27,7 @@ if(NOT DEFINED VULKAN_SDK)
 endif()
 
 if(NOT IS_DIRECTORY "${VULKAN_SDK}")
-    message(FATAL_ERROR "VULKAN_SDK must be the SDK directory (for example ~/VulkanSDK/<version>/macOS), not a dylib. See docs/INSTALL.md")
+    message(FATAL_ERROR "VULKAN_SDK must be the SDK directory (for example ~/VulkanSDK/<version>/macOS), not a dylib.")
 endif()
 message(STATUS "Newt: Vulkan SDK ${VULKAN_SDK}")
 
@@ -37,7 +37,7 @@ list(APPEND CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX}" "/opt/homebrew" "/usr/lo
 find_package(OpenXR CONFIG QUIET)
 if(NOT OpenXR_FOUND)
     message(FATAL_ERROR "No OpenXR CMake package (OpenXRConfig.cmake) found under: ${CMAKE_PREFIX_PATH}\n"
-        "Build/install https://github.com/KhronosGroup/OpenXR-SDK (see docs/INSTALL.md), then either pass "
+        "Build/install https://github.com/KhronosGroup/OpenXR-SDK, then either pass "
         "-DOpenXR_DIR=/path/to/folder/containing/OpenXRConfig.cmake or -DNEWT_SDK_SEARCH_PATH=/its/install/prefix.")
 endif()
 find_package(OpenXR CONFIG REQUIRED)

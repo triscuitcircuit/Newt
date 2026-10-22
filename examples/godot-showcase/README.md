@@ -1,11 +1,11 @@
 
 # Table of Contents
 
-1.  [What's in the scene](#org23c1f4c)
-2.  [Controls](#orgd19038f)
-3.  [Run it](#org26394bb)
-4.  [Validate without a headset](#orge2ec243)
-5.  [Layout](#orgdeadf2d)
+1.  [What's in the scene](#org9ff8095)
+2.  [Controls](#org0cabf30)
+3.  [Run it](#orgd1a3db2)
+4.  [Validate without a headset](#org54d36a6)
+5.  [Layout](#org1844283)
 
 A native Godot 4 OpenXR demo for Mac: one small island, three stations,
 built entirely in code from primitives — no imported assets. It exists to
@@ -17,7 +17,7 @@ For the minimal starter project, see [`../godot`](../godot). This is the
 bigger sibling.
 
 
-<a id="org23c1f4c"></a>
+<a id="org9ff8095"></a>
 
 # What's in the scene
 
@@ -35,7 +35,7 @@ bigger sibling.
     score/shots/FPS.
 
 
-<a id="orgd19038f"></a>
+<a id="org0cabf30"></a>
 
 # Controls
 
@@ -93,7 +93,7 @@ Desktop preview (no headset): the camera slowly orbits the island.
 `Esc` opens the pause panel, `Q` quits from it.
 
 
-<a id="org26394bb"></a>
+<a id="orgd1a3db2"></a>
 
 # Run it
 
@@ -104,7 +104,7 @@ architectures, and an awake headset with no other app owning the session.
 **Editor Play (recommended):** open this folder in Godot, configure Newt
 once via **Project → Tools → Configure Newt…**, press Play. The bundled
 Newt Play Bridge starts/reuses the session manager, reserves the headset,
-and restores the dashboard on Stop. See [`docs/GODOT-PLAY.md`](../../docs/GODOT-PLAY.md).
+and restores the dashboard on Stop.
 
 **Session manager CLI:**
 
@@ -116,7 +116,7 @@ and restores the dashboard on Stop. See [`docs/GODOT-PLAY.md`](../../docs/GODOT-
     python3 launch.py --runtime /absolute/path/to/runtime.json --godot /path/to/Godot
 
 
-<a id="orge2ec243"></a>
+<a id="org54d36a6"></a>
 
 # Validate without a headset
 
@@ -131,7 +131,7 @@ hardware run — that part is honestly unverified until someone puts the
 headset on.
 
 
-<a id="orgdeadf2d"></a>
+<a id="org1844283"></a>
 
 # Layout
 
@@ -185,3 +185,4 @@ headset on.
 Godot owns its OpenXR session here — `Newt_Run()` is never called inside
 the game. Newt's role is the dashboard/launcher around it and the
 one-owner handoff, exactly as in the minimal example.
+

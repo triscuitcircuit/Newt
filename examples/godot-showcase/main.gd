@@ -341,6 +341,7 @@ func _toggle_pause() -> void:
 			var cam := rig.camera
 			_pause_panel.global_position = cam.global_position + -cam.global_basis.z.normalized() * 1.15
 			_pause_panel.look_at(cam.global_position, Vector3.UP)
+			_pause_panel.rotate_object_local(Vector3.UP, PI)
 		else:
 			_pause_panel.global_position = Vector3(0, 1.5, 0.5)
 			_pause_panel.rotation = Vector3.ZERO

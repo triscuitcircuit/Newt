@@ -1046,11 +1046,7 @@ constexpr const char* kDashboardStub =
     "done\n"
     "exit 0\n";
 
-// Development bundle: keep the original export intact inside a new .app
-// whose native launcher submits it to the session manager (`newtd run`).
-// The generated bootstrap execs the bundled newtd binary. With --runtime and
-// --bundle-id (and optional --icd) it instead produces a self-contained
-// standalone bundle: see docs/GODOT-STANDALONE-EXPORT.md.
+
 int RunBundle(const std::vector<std::string>& args) {
     NSString* gameValue = FlagValue(args, "--game");
     NSString* outputValue = FlagValue(args, "--output");

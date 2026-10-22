@@ -1,4 +1,4 @@
-% Created 2026-10-21 Wed 01:47
+% Created 2026-10-21 Wed 19:48
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -24,7 +24,7 @@
  pdftitle={Press Play with Newt},
  pdfkeywords={},
  pdfsubject={},
- pdfcreator={Emacs 30.2 (Org mode 9.7.11)},
+ pdfcreator={Emacs 30.2 (Org mode 9.7.11)}, 
  pdflang={English}}
 \begin{document}
 
@@ -35,7 +35,7 @@
 
 Newt Play Bridge is a Godot 4 editor plugin for macOS. It discovers the local user's managed Newt session over a private Unix socket. Pressing Play reserves the headset, fades/stops the dashboard, configures the game's runtime environment, and lets Godot start the game normally. Newt watches the game process and restores the dashboard after Stop or a crash.
 \section{One-time setup on a developer Mac}
-\label{sec:org4a53808}
+\label{sec:org163039b}
 See \href{INSTALL.md}{Install Newt and locate its libraries}. You can now configure paths from \textbf{Project → Tools → Configure Newt…} in Godot using file pickers. Save once before pressing Play.
 
 Build and install Newt, including \texttt{newt-demo}, and supply a compatible macOS OpenXR runtime. Configure the installed developer command once:
@@ -46,7 +46,7 @@ Add \texttt{-{}-{}icd /path/to/MoltenVK\_icd.json} if the runtime needs an exter
 
 From a source checkout, use the built \texttt{build/newtd} instead of the installed \texttt{newt} command (same binary; \texttt{newt} is a symlink to \texttt{newtd} once installed).
 \section{Add the plugin to a game}
-\label{sec:org2108953}
+\label{sec:org92e5fd9}
 Copy \texttt{addons/newt\_bridge} into the project's \texttt{addons} directory, or run:
 \begin{verbatim}
 python3 tools/install-godot-plugin.py /path/to/godot-project
@@ -60,7 +60,7 @@ python3 tools/install-godot-plugin.py /path/to/godot-project
 
 The plugin talks to the installed native \texttt{newtd} daemon; no Python is involved at editor or game runtime. It uses the same user configuration and IPC endpoint as the installed Newt command. It is development tooling; it does not embed a runtime into the game or add a second XR renderer.
 \section{Handoff behavior}
-\label{sec:orgf0a4555}
+\label{sec:orgc7f6d77}
 \begin{itemize}
 \item One headset owner at a time. A running game rejects a competing launch.
 \item Dashboard stop gets a graceful fade window, then bounded terminate/kill fallback before the game starts.
@@ -75,7 +75,7 @@ The plugin talks to the installed native \texttt{newtd} daemon; no Python is inv
 
 Useful commands: \texttt{newt start}, \texttt{newt status}, \texttt{newt resume}, \texttt{newt stop}.
 \section{Terminal and development app bundling}
-\label{sec:orgba0a3f9}
+\label{sec:org80abfc4}
 \begin{verbatim}
 newt run --project /path/to/godot-project
 newt run --game /path/to/ExportedGame.app
@@ -85,18 +85,18 @@ newt bundle --game /path/to/ExportedGame.app --output /path/to/Game-Newt.app
 
 This development bundle requires the configured Newt installation on that Mac. (Creating a standalone bundle shells out to \texttt{python3} for the dylib-closure step, on the developer Mac only; the produced app needs no Python.) It is not a self-contained distributable or notarized release. A production installer/native manager with runtime version selection and a licensed runtime distribution is a separate packaging milestone. Bundling does not automatically export a Godot project; use Godot's macOS export first.
 \section{Self-contained standalone bundles}
-\label{sec:orgf96f219}
+\label{sec:org646a444}
 For distribution to Macs that have never installed Newt, \texttt{bundle} also has a standalone mode that embeds a developer-supplied OpenXR runtime (and optional Vulkan ICD, e.g. MoltenVK) with their complete dylib closures, plus the \texttt{newtd} manager itself:
 \begin{verbatim}
 newt bundle --game /path/to/ExportedGame.app --output /path/to/Game.app \
   --runtime /path/to/runtime.json --icd /path/to/MoltenVK_icd.json \
   --bundle-id com.example.mygame
 \end{verbatim}
-Newt does not supply runtime binaries; you provide locally built ones, as above. The output app's launcher points \texttt{newtd} at a private state directory (\texttt{\textasciitilde{}/Library/Application Support/<bundle-id>/Newt}) and a matching private IPC directory, and the first launch auto-configures itself from the embedded manifests — no \texttt{newt configure}, dashboard, or Pippin needed on the player's Mac, and a separately installed Newt/Pippin setup is never touched. Quitting the game stops the manager too; nothing lingers. Signing uses \texttt{\$CODESIGN\_IDENTITY} (ad-hoc by default). See \href{../../docs/GODOT-STANDALONE-EXPORT.md}{Self-contained Godot export} for the design.
+Newt does not supply runtime binaries; you provide locally built ones, as above. The output app's launcher points \texttt{newtd} at a private state directory (\texttt{\textasciitilde{}/Library/Application Support/<bundle-id>/Newt}) and a matching private IPC directory, and the first launch auto-configures itself from the embedded manifests — no \texttt{newt configure}, dashboard, or Pippin needed on the player's Mac, and a separately installed Newt/Pippin setup is never touched. Quitting the game stops the manager too; nothing lingers. Signing uses \texttt{\$CODESIGN\_IDENTITY} (ad-hoc by default).
 
 To produce this automatically from \textbf{Project → Export}, set Project Settings → Newt → Distribution: \texttt{runtime\_manifest} (required to activate), \texttt{icd\_manifest} (optional), and \texttt{bundle\_id} (defaults to \texttt{org.newt.<your project name>}). After each macOS \texttt{.app} export, the plugin writes \texttt{<name> (Newt-ready).app} next to it. Leaving \texttt{runtime\_manifest} empty disables export-time bundling entirely.
 \section{Validation}
-\label{sec:org802d7de}
+\label{sec:orgb80ff1a}
 Hardware-free regression tests cover launch ordering, runtime inheritance, exclusive ownership, game exit/failure, invalid reservation tokens, external-game completion, startup reservation expiry, duplicate managers, and shutdown. A headless Godot test also exercises the actual plugin build hook, inherited environment, and game autoload. The native development app bootstrap is compiled, signed, and tested against a fake exported app. Full F5-to-headset rendering and return still require an on-device test of the chosen runtime/engine combination.
 
 References: \href{https://docs.godotengine.org/en/4.4/classes/class\_editorplugin.html\#class-editorplugin-private-method-build}{Godot EditorPlugin build hook}, \href{https://docs.godotengine.org/en/4.4/classes/class\_os.html\#class-os-method-set-environment}{Godot process environment}.

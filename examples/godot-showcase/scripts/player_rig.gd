@@ -139,7 +139,7 @@ func _update_hands(_delta: float) -> void:
 	for i in range(hands.size()):
 		var tracked := hands[i].get_has_tracking_data()
 		hand_meshes[i].visible = tracked
-		rays[i].visible = tracked and interaction_enabled
+		rays[i].visible = tracked
 		if tracked:
 			var squeeze := clampf(hands[i].get_float("grip"), 0.0, 1.0)
 			hand_meshes[i].scale = Vector3.ONE * lerpf(1.0, 0.72, squeeze)

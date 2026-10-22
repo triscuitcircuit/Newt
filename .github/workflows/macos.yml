@@ -85,7 +85,6 @@ jobs:
       - name: Archive development SDK
         run: |
           mkdir -p dist
-          cp docs/CI.md "$RUNNER_TEMP/newt/CI-NOTES.md"
           tar -czf "dist/newt-macos-${{ matrix.arch }}-usb-${{ matrix.usb }}.tar.gz" -C "$RUNNER_TEMP/newt" .
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:

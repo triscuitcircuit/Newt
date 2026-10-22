@@ -58,7 +58,7 @@ architectures, and an awake headset with no other app owning the session.
 *Editor Play (recommended):* open this folder in Godot, configure Newt
 once via *Project → Tools → Configure Newt…*, press Play. The bundled
 Newt Play Bridge starts/reuses the session manager, reserves the headset,
-and restores the dashboard on Stop. See [[file:../../docs/GODOT-PLAY.md][~docs/GODOT-PLAY.md~]].
+and restores the dashboard on Stop.
 
 *Session manager CLI:*
 #+begin_src sh

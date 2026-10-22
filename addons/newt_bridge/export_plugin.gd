@@ -5,7 +5,6 @@ extends EditorExportPlugin
 # bundle via `newtd bundle --runtime ... --bundle-id ...` when the
 # project's Newt distribution settings name a runtime manifest. Projects
 # without newt/distribution/runtime_manifest see no export-time change.
-# See docs/GODOT-STANDALONE-EXPORT.md.
 
 var owner  # The EditorPlugin (plugin.gd); provides _run_cli/_decode_response.
 var export_path := ""
