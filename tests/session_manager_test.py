@@ -160,8 +160,9 @@ with tempfile.TemporaryDirectory(prefix='newt-session-test-') as raw:
         (state/'config.json').write_text(json.dumps(config))
         assert call('launch',argv=[str(game2)],cwd=str(root))['ok']
         wait_for(lambda:call('status')['state']=='dashboard')
-        probes=[l for l in events.read_text().splitlines() if l.startswith('env:NEWT_TEST_PROBE=')]
-        assert probes[-1]=='env:NEWT_TEST_PROBE=hello-from-host'
+        # 'dashboard' is reported once the process is spawned; the helper writes its env line after
+        # its own startup, which can lag on CI runners, so wait for the line instead of reading once.
+        wait_for(lambda:'env:NEWT_TEST_PROBE=hello-from-host' in events.read_text().splitlines())
         print('PASS: dashboard_env overrides (e.g. a rich host\'s refresh/scale settings) reach the dashboard')
         second=subprocess.run(SERVE_CMD,env=env,capture_output=True,timeout=3)
         assert second.returncode==0 and call('status')['ok']
