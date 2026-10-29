@@ -10,6 +10,8 @@ using Newt::Session;
 #include "color_frag.h"
 #include "texture_vert.h"
 #include "texture_frag.h"
+#include "passthrough_vert.h"
+#include "passthrough_frag.h"
 void Session::CreateRenderAssets() {
     VkSamplerCreateInfo sci{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
     sci.magFilter = VK_FILTER_LINEAR;
@@ -36,9 +38,10 @@ void Session::CreateRenderAssets() {
 
     VkDescriptorPoolSize poolSize{};
     poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSize.descriptorCount = 128;
+    constexpr uint32_t descriptorCapacity = 1024;
+    poolSize.descriptorCount = descriptorCapacity;
     VkDescriptorPoolCreateInfo dpci{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
-    dpci.maxSets = 128;
+    dpci.maxSets = descriptorCapacity;
     dpci.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     dpci.poolSizeCount = 1;
     dpci.pPoolSizes = &poolSize;
@@ -219,6 +222,34 @@ void Session::CreatePipelines() {
     pci.layout = mTexturePipelineLayout;
     CheckVk(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pci, nullptr, &mTexturePipeline),
             "vkCreateGraphicsPipelines(texture)");
+
+    // Passthrough window: same vertex format and texture binding, larger push constants.
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
+    if (properties.limits.maxPushConstantsSize >= sizeof(PassthroughPush)) {
+        VkShaderModule ptVert = CreateShader(passthrough_vert_spv, passthrough_vert_spv_len);
+        VkShaderModule ptFrag = CreateShader(passthrough_frag_spv, passthrough_frag_spv_len);
+        VkPushConstantRange ptPush{};
+        ptPush.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        ptPush.size = sizeof(PassthroughPush);
+        VkPipelineLayoutCreateInfo ptPlci{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+        ptPlci.setLayoutCount = 1;
+        ptPlci.pSetLayouts = &mTextureLayout;
+        ptPlci.pushConstantRangeCount = 1;
+        ptPlci.pPushConstantRanges = &ptPush;
+        CheckVk(vkCreatePipelineLayout(mDevice, &ptPlci, nullptr, &mPassthroughLayout),
+                "vkCreatePipelineLayout(passthrough)");
+        const auto ptStages = makeShaderStages(ptVert, ptFrag);
+        pci.pStages = ptStages.data();
+        pci.layout = mPassthroughLayout;
+        CheckVk(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pci, nullptr, &mPassthroughPipeline),
+                "vkCreateGraphicsPipelines(passthrough)");
+        vkDestroyShaderModule(mDevice, ptVert, nullptr);
+        vkDestroyShaderModule(mDevice, ptFrag, nullptr);
+    } else {
+        Newt_Logf(NEWT_LOG_WARNING, "Passthrough window unavailable: %u-byte push constants (needs %zu)",
+                  properties.limits.maxPushConstantsSize, sizeof(PassthroughPush));
+    }
 
     vkDestroyShaderModule(mDevice, colorVert, nullptr);
     vkDestroyShaderModule(mDevice, colorFrag, nullptr);

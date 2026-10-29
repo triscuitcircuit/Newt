@@ -67,6 +67,8 @@ add_shader(color.vert color_vert color_vert_spv)
 add_shader(color.frag color_frag color_frag_spv)
 add_shader(texture.vert texture_vert texture_vert_spv)
 add_shader(texture.frag texture_frag texture_frag_spv)
+add_shader(passthrough.vert passthrough_vert passthrough_vert_spv)
+add_shader(passthrough.frag passthrough_frag passthrough_frag_spv)
 
 add_library(newt_core STATIC
     CoreLifecycle.mm
@@ -80,7 +82,8 @@ add_library(newt_core STATIC
     DrawHelpers.mm
     Log.mm
     "${color_vert_HEADER}" "${color_frag_HEADER}"
-    "${texture_vert_HEADER}" "${texture_frag_HEADER}")
+    "${texture_vert_HEADER}" "${texture_frag_HEADER}"
+    "${passthrough_vert_HEADER}" "${passthrough_frag_HEADER}")
 target_include_directories(newt_core PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${GENERATED_DIR}")
 target_compile_options(newt_core PRIVATE -fobjc-arc)
 target_compile_definitions(newt_core PRIVATE XR_USE_GRAPHICS_API_VULKAN)

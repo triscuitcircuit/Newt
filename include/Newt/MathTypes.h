@@ -140,6 +140,10 @@ inline XrPosef IdentityPose() {
 struct VertexPC { float pos[3]; float uv[2]; };
 struct ColorPush { Mat4 mvp; Vec4 color; };
 struct TexturePush { Mat4 mvp; Vec4 source{0,0,1,1}; Vec4 destination{0,0,1,1}; };
+struct PassthroughPush {
+    Mat4 mvp; Mat4 cameraFromLocal; Vec4 lens0; Vec4 lens1; Vec4 lens2; Vec4 size; Vec4 cutout0; Vec4 cutout1;
+};
+static_assert(sizeof(PassthroughPush) == 224, "passthrough push constant layout");
 
 inline std::vector<Vec3> MakeCube() {
     const float h = 0.5f;

@@ -13,8 +13,16 @@ void Session::Run(Newt::SessionDelegate& delegate) {
     if(mActive) throw std::logic_error("Session::Run is already active");
     mActive=true; mDelegate=&delegate; mStop.store(false);
     try {
-        CreateInstanceAndSystem(); CreateVulkanAndSession(); CreateReferenceSpace();
-        CreateSwapchains(); CreateRenderAssets(); CreatePipelines(); CreateActions();
+        CreateInstanceAndSystem();
+        CreateVulkanAndSession();
+        CreateReferenceSpace();
+
+        CreateSwapchains();
+        CreateRenderAssets();
+        CreatePipelines();
+        CreateActions();
+        CreateHandTrackers();
+
         delegate.OnReady(*this);
         uint64_t frameCount = 0;
         std::array<double, 4> stageMs{};
@@ -91,6 +99,14 @@ void Session::Cleanup() noexcept {
         vkDestroyPipeline(mDevice, mTexturePipeline, nullptr);
         mTexturePipeline = VK_NULL_HANDLE;
     }
+    if (mPassthroughPipeline != VK_NULL_HANDLE) {
+        vkDestroyPipeline(mDevice, mPassthroughPipeline, nullptr);
+        mPassthroughPipeline = VK_NULL_HANDLE;
+    }
+    if (mPassthroughLayout != VK_NULL_HANDLE) {
+        vkDestroyPipelineLayout(mDevice, mPassthroughLayout, nullptr);
+        mPassthroughLayout = VK_NULL_HANDLE;
+    }
     if (mColorLayout != VK_NULL_HANDLE) {
         vkDestroyPipelineLayout(mDevice, mColorLayout, nullptr);
         mColorLayout = VK_NULL_HANDLE;
@@ -152,6 +168,14 @@ void Session::Cleanup() noexcept {
         xrDestroyActionSet(mActionSet);
         mActionSet = XR_NULL_HANDLE;
     }
+    for (auto& tracker : mHandTrackers) {
+        if (tracker != XR_NULL_HANDLE && mDestroyHandTracker) mDestroyHandTracker(tracker);
+        tracker = XR_NULL_HANDLE;
+    }
+    mHandTrackingSupported = false;
+    mCreateHandTracker = nullptr;
+    mDestroyHandTracker = nullptr;
+    mLocateHandJoints = nullptr;
     if (mAppSpace != XR_NULL_HANDLE) {
         xrDestroySpace(mAppSpace);
         mAppSpace = XR_NULL_HANDLE;

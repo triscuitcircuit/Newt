@@ -28,20 +28,31 @@ void Session::CreateInstanceAndSystem() {
     appInfo.engineVersion = 1;
     appInfo.apiVersion = XR_CURRENT_API_VERSION;
 
-    const char* const extensions[] = { XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME };
+    std::vector<const char*> extensions{XR_KHR_VULKAN_ENABLE2_EXTENSION_NAME};
+    uint32_t extensionCount = 0;
+    CheckXr(xrEnumerateInstanceExtensionProperties(nullptr, 0, &extensionCount, nullptr), "enumerate extensions");
+    std::vector<XrExtensionProperties> available(extensionCount, {XR_TYPE_EXTENSION_PROPERTIES});
+    CheckXr(xrEnumerateInstanceExtensionProperties(nullptr, extensionCount, &extensionCount, available.data()), "enumerate extensions");
+    const bool handExtension = std::any_of(available.begin(), available.end(), [](const auto& extension) {
+        return std::strcmp(extension.extensionName, XR_EXT_HAND_TRACKING_EXTENSION_NAME) == 0;
+    });
+    if (handExtension) extensions.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
     XrInstanceCreateInfo createInfo{ XR_TYPE_INSTANCE_CREATE_INFO };
     createInfo.applicationInfo = appInfo;
-    createInfo.enabledExtensionCount = 1;
-    createInfo.enabledExtensionNames = extensions;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.enabledExtensionNames = extensions.data();
     CheckXr(xrCreateInstance(&createInfo, &mInstance), "xrCreateInstance");
 
     XrSystemGetInfo systemInfo{ XR_TYPE_SYSTEM_GET_INFO };
     systemInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
     CheckXr(xrGetSystem(mInstance, &systemInfo, &mSystemId), "xrGetSystem");
 
+    XrSystemHandTrackingPropertiesEXT handProperties{XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT};
     XrSystemProperties systemProperties{ XR_TYPE_SYSTEM_PROPERTIES };
+    if (handExtension) systemProperties.next = &handProperties;
     CheckXr(xrGetSystemProperties(mInstance, mSystemId, &systemProperties), "xrGetSystemProperties");
     Newt_Logf(NEWT_LOG_INFO, "OpenXR system '%s'", systemProperties.systemName);
+    mHandTrackingSupported = handExtension && handProperties.supportsHandTracking;
     mDelegate->OnSystem(systemProperties);
 
     mGetRequirements2 =

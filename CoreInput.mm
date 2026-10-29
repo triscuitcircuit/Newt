@@ -84,6 +84,27 @@ void Session::CreateActions() {
     CheckXr(xrAttachSessionActionSets(mSession, &attach), "xrAttachSessionActionSets");
 }
 
+void Session::CreateHandTrackers() {
+    if (!mHandTrackingSupported) {
+        Newt_Logf(NEWT_LOG_INFO, "Hand tracking unavailable; wrist clock requires tracked hands");
+        return;
+    }
+    if (XR_FAILED(xrGetInstanceProcAddr(mInstance, "xrCreateHandTrackerEXT", reinterpret_cast<PFN_xrVoidFunction*>(&mCreateHandTracker))) ||
+        XR_FAILED(xrGetInstanceProcAddr(mInstance, "xrDestroyHandTrackerEXT", reinterpret_cast<PFN_xrVoidFunction*>(&mDestroyHandTracker))) ||
+        XR_FAILED(xrGetInstanceProcAddr(mInstance, "xrLocateHandJointsEXT", reinterpret_cast<PFN_xrVoidFunction*>(&mLocateHandJoints))) ||
+        !mCreateHandTracker || !mDestroyHandTracker || !mLocateHandJoints) return;
+    for (int hand = 0; hand < 2; ++hand) {
+        XrHandTrackerCreateInfoEXT info{XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT};
+        info.hand = hand == 0 ? XR_HAND_LEFT_EXT : XR_HAND_RIGHT_EXT;
+        info.handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT;
+        const auto result = mCreateHandTracker(mSession, &info, &mHandTrackers[hand]);
+        if (XR_FAILED(result)) {
+            mHandTrackers[hand] = XR_NULL_HANDLE;
+            Newt_Logf(NEWT_LOG_WARNING, "Hand tracker %d unavailable (%d)", hand, result);
+        }
+    }
+}
+
 bool Session::PollEvents() {
     XrEventDataBuffer event{ XR_TYPE_EVENT_DATA_BUFFER };
     while (xrPollEvent(mInstance, &event) == XR_SUCCESS) {
@@ -168,6 +189,30 @@ Newt::InputState Session::ReadInput(XrTime time) {
         }
     }
     for(int hand=0;hand<2;++hand) {
+        if (mHandTrackers[hand] != XR_NULL_HANDLE && mLocateHandJoints) {
+            std::array<XrHandJointLocationEXT, XR_HAND_JOINT_COUNT_EXT> joints{};
+            XrHandJointLocationsEXT locations{XR_TYPE_HAND_JOINT_LOCATIONS_EXT};
+            locations.jointCount = static_cast<uint32_t>(joints.size());
+            locations.jointLocations = joints.data();
+            XrHandJointsLocateInfoEXT info{XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT};
+            info.baseSpace = mAppSpace;
+            info.time = time;
+            constexpr XrSpaceLocationFlags required = XR_SPACE_LOCATION_POSITION_VALID_BIT |
+                XR_SPACE_LOCATION_ORIENTATION_VALID_BIT | XR_SPACE_LOCATION_POSITION_TRACKED_BIT |
+                XR_SPACE_LOCATION_ORIENTATION_TRACKED_BIT;
+            if (XR_SUCCEEDED(mLocateHandJoints(mHandTrackers[hand], &info, &locations)) && locations.isActive &&
+                (joints[XR_HAND_JOINT_PALM_EXT].locationFlags & required) == required &&
+                (joints[XR_HAND_JOINT_WRIST_EXT].locationFlags & required) == required) {
+                input.handValid[hand] = true;
+                input.palm[hand] = joints[XR_HAND_JOINT_PALM_EXT].pose;
+                input.wrist[hand] = joints[XR_HAND_JOINT_WRIST_EXT].pose;
+                input.jointsValid[hand] = std::all_of(joints.begin(), joints.end(), [&](const XrHandJointLocationEXT& j) {
+                    return (j.locationFlags & required) == required;
+                });
+                if (input.jointsValid[hand])
+                    for (size_t j = 0; j < joints.size(); ++j) input.joints[hand][j] = joints[j].pose;
+            }
+        }
         input.aimValid[hand]=LocatePose(mAimSpaces[hand],time,input.aim[hand]);
         input.gripValid[hand]=LocatePose(mGripSpaces[hand],time,input.grip[hand]);
         XrActionStateGetInfo get{XR_TYPE_ACTION_STATE_GET_INFO}; get.subactionPath=mHandPaths[hand];

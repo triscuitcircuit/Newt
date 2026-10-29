@@ -55,6 +55,10 @@ struct InputState {
     XrTime displayTime = 0;
     XrPosef viewer = IdentityPose();
     bool viewerValid = false;
+    std::array<XrPosef,2> palm{}, wrist{};
+    std::array<bool,2> handValid{};
+    std::array<std::array<XrPosef, XR_HAND_JOINT_COUNT_EXT>,2> joints{};
+    std::array<bool,2> jointsValid{};
     std::array<XrPosef,2> aim{}, grip{};
     std::array<bool,2> aimValid{}, gripValid{}, select{}, menu{};
     std::array<XrActionStateFloat,2> grab{};
@@ -107,6 +111,19 @@ public:
     void DrawGPUTexture(VkCommandBuffer cmd, const Mat4& viewProj, const Mat4& model,
                         const GPUTexture& texture, const TextureRegion& region = {},
                         const Buffer* mesh = nullptr, uint32_t vertexCount = 6);
+    struct PassthroughLens {
+        float focal = 0, cx = 0, cy = 0;
+        float width = 0, height = 0;
+        float k[6] = {};
+        float p[2] = {};
+        float cutout[8] = {-0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f};
+        bool discardOutside = false; // outside the camera image: draw nothing (else a dark fill)
+    };
+    bool SupportsPassthroughWindow() const { return mPassthroughPipeline != VK_NULL_HANDLE; }
+    void DrawPassthroughWindow(VkCommandBuffer cmd, const Mat4& viewProj, const Mat4& model,
+                               const Mat4& cameraFromLocal, const GPUTexture& texture,
+                               const PassthroughLens& lens, const Buffer* mesh = nullptr,
+                               uint32_t vertexCount = 6);
     void DestroyTexture(Texture& tex);
     VkShaderModule CreateShader(const unsigned char* data, unsigned int len);
     void DrawColor(VkCommandBuffer cmd, const Mat4& viewProj, const Mat4& model,
@@ -123,6 +140,7 @@ private:
     void CreateRenderAssets();
     void CreatePipelines();
     void CreateActions();
+    void CreateHandTrackers();
     bool PollEvents();
     bool LocatePose(XrSpace space, XrTime time, XrPosef& pose);
     InputState ReadInput(XrTime time);
@@ -175,6 +193,14 @@ private:
     VkPipeline mColorPipeline = VK_NULL_HANDLE;
     VkPipeline mLinePipeline = VK_NULL_HANDLE;
     VkPipeline mTexturePipeline = VK_NULL_HANDLE;
+    VkPipelineLayout mPassthroughLayout = VK_NULL_HANDLE;
+    VkPipeline mPassthroughPipeline = VK_NULL_HANDLE;
+
+    bool mHandTrackingSupported = false;
+    PFN_xrCreateHandTrackerEXT mCreateHandTracker = nullptr;
+    PFN_xrDestroyHandTrackerEXT mDestroyHandTracker = nullptr;
+    PFN_xrLocateHandJointsEXT mLocateHandJoints = nullptr;
+    std::array<XrHandTrackerEXT, 2> mHandTrackers{};
 
     XrActionSet mActionSet = XR_NULL_HANDLE;
     XrAction mAimAction = XR_NULL_HANDLE, mGrabAction = XR_NULL_HANDLE, mGripAction = XR_NULL_HANDLE;

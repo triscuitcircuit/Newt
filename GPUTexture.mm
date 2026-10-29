@@ -112,6 +112,31 @@ void Session::DrawGPUTexture(VkCommandBuffer command, const Mat4& viewProj, cons
     vkCmdDraw(command, count, 1, 0, 0);
 }
 
+void Session::DrawPassthroughWindow(VkCommandBuffer command, const Mat4& viewProj, const Mat4& model,
+                                    const Mat4& cameraFromLocal, const GPUTexture& frame,
+                                    const PassthroughLens& lens, const Buffer* mesh, uint32_t count) {
+    if (mPassthroughPipeline == VK_NULL_HANDLE || !frame || frame->device != mDevice ||
+        !frame->texture.initialized || lens.width <= 0 || lens.height <= 0)
+        return;
+    auto& retained = mSampledGPUTextures[mDrawingSlot];
+    if (std::find(retained.begin(), retained.end(), frame) == retained.end()) retained.push_back(frame);
+    vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, mPassthroughPipeline);
+    VkDeviceSize offset = 0;
+    vkCmdBindVertexBuffers(command, 0, 1, mesh ? &mesh->buffer : &mQuadBuffer.buffer, &offset);
+    vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS, mPassthroughLayout,
+                            0, 1, &frame->texture.descriptor, 0, nullptr);
+    const PassthroughPush push{Multiply(viewProj, model), cameraFromLocal,
+                               {lens.focal, lens.cx, lens.cy, 0},
+                               {lens.k[0], lens.k[1], lens.k[2], lens.k[3]},
+                               {lens.k[4], lens.k[5], lens.p[0], lens.p[1]},
+                               {1.0f / lens.width, 1.0f / lens.height, lens.discardOutside ? 1.0f : 0.0f, 0},
+                               {lens.cutout[0], lens.cutout[1], lens.cutout[2], lens.cutout[3]},
+                               {lens.cutout[4], lens.cutout[5], lens.cutout[6], lens.cutout[7]}};
+    vkCmdPushConstants(command, mPassthroughLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                       0, sizeof(push), &push);
+    vkCmdDraw(command, count, 1, 0, 0);
+}
+
 void Session::CleanupGPUTextures() noexcept {
     for (auto& entry : mGPUTextures) if (auto frame = entry.lock()) frame->Release();
     for (auto& frames : mSampledGPUTextures) frames.clear();
