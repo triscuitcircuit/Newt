@@ -112,7 +112,7 @@ void Session::CreateTexture(Texture& tex, uint32_t width, uint32_t height) {
     CheckVk(vkBindImageMemory(mDevice, tex.image, tex.memory, 0), "vkBindImageMemory(texture)");
     tex.view = CreateView(tex.image, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
-    // Persistent host-visible mapped staging buffer for zero-allocation live frame uploads.
+
     tex.stagingSize = static_cast<VkDeviceSize>(tex.width) * tex.height * 4;
     VkBufferCreateInfo bci{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     bci.size = tex.stagingSize;

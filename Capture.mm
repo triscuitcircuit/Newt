@@ -14,6 +14,9 @@ void SetMediaVolume(float v) { gMediaVolume.store(std::max(0.0f,std::min(1.0f,v)
 #include <iostream>
 
 static std::atomic<uint32_t> liveWidth{1024};
+static std::atomic<bool> screenCaptureBadgeVisible{true};
+void SetScreenCaptureBadgeVisible(bool visible) { screenCaptureBadgeVisible.store(visible, std::memory_order_relaxed); }
+bool ScreenCaptureBadgeVisible() { return screenCaptureBadgeVisible.load(std::memory_order_relaxed); }
 uint32_t LiveWidth() { return liveWidth.load(); }
 uint32_t LiveHeight() { return LiveWidth() * 5 / 8; }
 void SetLiveResolution(uint32_t width) { liveWidth = width; }
@@ -61,7 +64,7 @@ PixelImage PixelImageFromCVPixelBuffer(CVPixelBufferRef pb, const std::string& b
                 out.pixels.data(), out.width, out.height, 8, out.width * 4, cs,
                 kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little);
 
-            // Fill dark background.
+
             CGContextSetRGBFillColor(ctx, 0.04, 0.05, 0.065, 1.0);
             CGContextFillRect(ctx, CGRectMake(0, 0, out.width, out.height));
 
@@ -101,7 +104,7 @@ PixelImage PixelImageFromCVPixelBuffer(CVPixelBufferRef pb, const std::string& b
     return out;
 }
 
-} // namespace
+}
 
 
 float NewtCaptureInternal::MediaVolume() { return gMediaVolume.load(); }

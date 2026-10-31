@@ -9,14 +9,14 @@ std::mutex gLogMutex;
 NewtLogHandler gHandler = nullptr;
 void* gHandlerUser = nullptr;
 int gMinimumLevel = NEWT_LOG_DEBUG;
-} // namespace
+}
 
 namespace NewtInternal {
 bool HasLogHandler() {
     std::lock_guard<std::mutex> guard(gLogMutex);
     return gHandler != nullptr;
 }
-} // namespace NewtInternal
+}
 
 extern "C" int Newt_IsEmbedded(void) {
     return NewtInternal::HasLogHandler() ? 1 : 0;

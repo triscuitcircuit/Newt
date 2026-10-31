@@ -223,7 +223,7 @@ void Session::CreatePipelines() {
     CheckVk(vkCreateGraphicsPipelines(mDevice, VK_NULL_HANDLE, 1, &pci, nullptr, &mTexturePipeline),
             "vkCreateGraphicsPipelines(texture)");
 
-    // Passthrough window: same vertex format and texture binding, larger push constants.
+
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(mPhysicalDevice, &properties);
     if (properties.limits.maxPushConstantsSize >= sizeof(PassthroughPush)) {

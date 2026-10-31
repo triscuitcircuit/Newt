@@ -24,4 +24,4 @@ const char* NewtUSB_ErrorName(int error);
 }
 #endif
 
-#endif // NEWT_NEWTUSB_H
+#endif

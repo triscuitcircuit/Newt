@@ -102,7 +102,7 @@ inline Mat4 Projection(const XrFovf& fov, float nearZ, float farZ) {
     const float l = std::tan(fov.angleLeft), rgt = std::tan(fov.angleRight);
     const float d = std::tan(fov.angleDown), u = std::tan(fov.angleUp);
     const float w = rgt - l;
-    const float h = d - u; // Vulkan Y-down clip space.
+    const float h = d - u;
     Mat4 r{};
     r.m[0] = 2.0f / w;
     r.m[5] = 2.0f / h;
@@ -172,7 +172,7 @@ inline std::vector<Vec3> MakeGrid() {
         out.push_back({p, 0.0f, -5.0f}); out.push_back({p, 0.0f, 5.0f});
         out.push_back({-5.0f, 0.0f, p}); out.push_back({5.0f, 0.0f, p});
     }
-    // A continuous world-locked horizon remains visible when looking away from desktops.
+
     for (int i=0;i<128;++i) {
         const float a=i*6.2831853f/128, b=(i+1)*6.2831853f/128;
         out.push_back({8*std::sin(a),1.3f,8*std::cos(a)});
@@ -198,4 +198,4 @@ inline T GetXrFunction(XrInstance instance, const char* name) {
     return reinterpret_cast<T>(fn);
 }
 
-#endif // NEWT_MATHTYPES_H
+#endif

@@ -74,6 +74,7 @@ add_library(newt_core STATIC
     CoreLifecycle.mm
     GPUTexture.mm
     CoreFrame.mm
+    VRMirror.mm
     CoreInput.mm
     CorePipelines.mm
     XRSession.mm
@@ -209,6 +210,18 @@ write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/NewtConfigVersion.c
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/NewtConfig.cmake ${CMAKE_CURRENT_BINARY_DIR}/NewtConfigVersion.cmake DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Newt)
 include(CTest)
 if(BUILD_TESTING)
+    add_executable(newt-vr-mirror-wire-test tests/vr_mirror_wire_test.cpp)
+    target_include_directories(newt-vr-mirror-wire-test PRIVATE include)
+    target_compile_features(newt-vr-mirror-wire-test PRIVATE cxx_std_17)
+    target_compile_options(newt-vr-mirror-wire-test PRIVATE -UNDEBUG)
+    add_test(NAME vr-mirror-wire COMMAND newt-vr-mirror-wire-test)
+    add_executable(newt-vr-mirror-transport-test tests/vr_mirror_transport_test.mm VRMirror.mm)
+    target_include_directories(newt-vr-mirror-transport-test PRIVATE include)
+    target_compile_features(newt-vr-mirror-transport-test PRIVATE cxx_std_17)
+    target_compile_definitions(newt-vr-mirror-transport-test PRIVATE NEWT_VR_MIRROR_TESTING)
+    target_compile_options(newt-vr-mirror-transport-test PRIVATE -UNDEBUG -fobjc-arc)
+    target_link_libraries(newt-vr-mirror-transport-test PRIVATE "-framework CoreFoundation")
+    add_test(NAME vr-mirror-transport COMMAND newt-vr-mirror-transport-test)
     add_executable(newt-session-lifecycle-test tests/session_lifecycle_test.cpp)
     target_compile_options(newt-session-lifecycle-test PRIVATE -UNDEBUG)
     target_link_libraries(newt-session-lifecycle-test PRIVATE Newt::core)

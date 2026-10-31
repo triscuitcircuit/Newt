@@ -159,11 +159,13 @@ void Session::Cleanup() noexcept {
     mAimSpaces = {};
     mGripSpaces = {};
     const XrAction actions[] = { mAimAction, mGrabAction, mGripAction, mSelectAction, mMenuAction,
-                                mThumbstickAction, mHapticAction };
+                                mThumbstickAction, mHapticAction, mTriggerAction, mPrimaryAction,
+                                mSecondaryAction, mStickClickAction, mMenuClickAction };
     for (XrAction a : actions) {
         if (a != XR_NULL_HANDLE) xrDestroyAction(a);
     }
     mAimAction = mGrabAction = mGripAction = mSelectAction = mMenuAction = mThumbstickAction = mHapticAction = XR_NULL_HANDLE;
+    mTriggerAction = mPrimaryAction = mSecondaryAction = mStickClickAction = mMenuClickAction = XR_NULL_HANDLE;
     if (mActionSet != XR_NULL_HANDLE) {
         xrDestroyActionSet(mActionSet);
         mActionSet = XR_NULL_HANDLE;

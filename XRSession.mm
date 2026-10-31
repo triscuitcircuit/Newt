@@ -9,7 +9,7 @@ using Newt::Session;
 #include <thread>
 using namespace NewtInternal;
 
-// Fallback declarations for Vulkan headers that omit these (values are ABI-stable).
+
 #ifndef VK_EXT_METAL_SURFACE_EXTENSION_NAME
 #define VK_EXT_METAL_SURFACE_EXTENSION_NAME "VK_EXT_metal_surface"
 #endif

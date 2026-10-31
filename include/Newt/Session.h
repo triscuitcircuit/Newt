@@ -53,6 +53,7 @@ struct TextureRegion {
 
 struct InputState {
     XrTime displayTime = 0;
+    bool focused = false;
     XrPosef viewer = IdentityPose();
     bool viewerValid = false;
     std::array<XrPosef,2> palm{}, wrist{};
@@ -61,7 +62,8 @@ struct InputState {
     std::array<bool,2> jointsValid{};
     std::array<XrPosef,2> aim{}, grip{};
     std::array<bool,2> aimValid{}, gripValid{}, select{}, menu{};
-    std::array<XrActionStateFloat,2> grab{};
+    std::array<XrActionStateFloat,2> grab{}, trigger{};
+    std::array<XrActionStateBoolean,2> primary{}, secondary{}, stickClick{}, menuClick{};
     std::array<XrActionStateVector2f,2> stick{};
 };
 struct EyeFrame {
@@ -117,7 +119,7 @@ public:
         float k[6] = {};
         float p[2] = {};
         float cutout[8] = {-0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f, -0.5f, -0.5f};
-        bool discardOutside = false; // outside the camera image: draw nothing (else a dark fill)
+        bool discardOutside = false;
     };
     bool SupportsPassthroughWindow() const { return mPassthroughPipeline != VK_NULL_HANDLE; }
     void DrawPassthroughWindow(VkCommandBuffer cmd, const Mat4& viewProj, const Mat4& model,
@@ -152,7 +154,7 @@ private:
     std::vector<GPUTexture> mPendingGPUTextures;
     std::array<std::vector<GPUTexture>, 2> mSampledGPUTextures;
     size_t mDrawingSlot = 0;
-    SessionDelegate* mDelegate = nullptr; // borrowed only during Run
+    SessionDelegate* mDelegate = nullptr;
     std::atomic_bool mStop{false};
     bool mActive = false;
     Buffer mQuadBuffer;
@@ -206,8 +208,10 @@ private:
     XrAction mAimAction = XR_NULL_HANDLE, mGrabAction = XR_NULL_HANDLE, mGripAction = XR_NULL_HANDLE;
     XrAction mSelectAction = XR_NULL_HANDLE, mMenuAction = XR_NULL_HANDLE, mThumbstickAction = XR_NULL_HANDLE;
     XrAction mHapticAction = XR_NULL_HANDLE;
+    XrAction mTriggerAction = XR_NULL_HANDLE, mPrimaryAction = XR_NULL_HANDLE, mSecondaryAction = XR_NULL_HANDLE;
+    XrAction mStickClickAction = XR_NULL_HANDLE, mMenuClickAction = XR_NULL_HANDLE;
     std::array<XrPath, 2> mHandPaths{};
     std::array<XrSpace, 2> mAimSpaces{}, mGripSpaces{};
 };
-} // namespace Newt
+}
 #endif

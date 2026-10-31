@@ -32,6 +32,11 @@ void Session::CreateActions() {
     makeAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "menu", "Menu", &mMenuAction);
     makeAction(XR_ACTION_TYPE_VECTOR2F_INPUT, "thumbstick", "Thumbstick", &mThumbstickAction);
     makeAction(XR_ACTION_TYPE_VIBRATION_OUTPUT, "haptic", "Haptic Feedback", &mHapticAction);
+    makeAction(XR_ACTION_TYPE_FLOAT_INPUT, "trigger_value", "Trigger", &mTriggerAction);
+    makeAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "primary_button", "Primary Button", &mPrimaryAction);
+    makeAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "secondary_button", "Secondary Button", &mSecondaryAction);
+    makeAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "stick_click", "Thumbstick Click", &mStickClickAction);
+    makeAction(XR_ACTION_TYPE_BOOLEAN_INPUT, "menu_click", "Menu Button", &mMenuClickAction);
 
     std::vector<XrActionSuggestedBinding> bindings;
     auto bind = [&](XrAction action, const char* path) {
@@ -58,6 +63,15 @@ void Session::CreateActions() {
     bind(mMenuAction, "/user/hand/right/input/b/click");
     bind(mThumbstickAction, "/user/hand/left/input/thumbstick");
     bind(mThumbstickAction, "/user/hand/right/input/thumbstick");
+    bind(mTriggerAction, "/user/hand/left/input/trigger/value");
+    bind(mTriggerAction, "/user/hand/right/input/trigger/value");
+    bind(mPrimaryAction, "/user/hand/left/input/x/click");
+    bind(mPrimaryAction, "/user/hand/right/input/a/click");
+    bind(mSecondaryAction, "/user/hand/left/input/y/click");
+    bind(mSecondaryAction, "/user/hand/right/input/b/click");
+    bind(mStickClickAction, "/user/hand/left/input/thumbstick/click");
+    bind(mStickClickAction, "/user/hand/right/input/thumbstick/click");
+    bind(mMenuClickAction, "/user/hand/left/input/menu/click");
     bind(mHapticAction, "/user/hand/left/output/haptic");
     bind(mHapticAction, "/user/hand/right/output/haptic");
 
@@ -170,6 +184,7 @@ void Session::PulseHaptic(int hand, float amplitude) {
 Newt::InputState Session::ReadInput(XrTime time) {
     Newt::InputState input; input.displayTime = time;
     if (mSessionState != XR_SESSION_STATE_FOCUSED) return input;
+    input.focused = true;
     XrActiveActionSet active{mActionSet, XR_NULL_PATH};
     XrActionsSyncInfo sync{XR_TYPE_ACTIONS_SYNC_INFO};
     sync.countActiveActionSets = 1; sync.activeActionSets = &active;
@@ -222,6 +237,16 @@ Newt::InputState Session::ReadInput(XrTime time) {
             return value.isActive && value.currentState;
         };
         input.select[hand]=button(mSelectAction); input.menu[hand]=button(mMenuAction);
+        auto rawButton = [&](XrAction action, XrActionStateBoolean& value) {
+            get.action = action; value.type = XR_TYPE_ACTION_STATE_BOOLEAN;
+            CheckXr(xrGetActionStateBoolean(mSession, &get, &value), "xrGetActionStateBoolean");
+        };
+        rawButton(mPrimaryAction, input.primary[hand]);
+        rawButton(mSecondaryAction, input.secondary[hand]);
+        rawButton(mStickClickAction, input.stickClick[hand]);
+        rawButton(mMenuClickAction, input.menuClick[hand]);
+        get.action=mTriggerAction; input.trigger[hand].type=XR_TYPE_ACTION_STATE_FLOAT;
+        CheckXr(xrGetActionStateFloat(mSession,&get,&input.trigger[hand]),"xrGetActionStateFloat(trigger)");
         get.action=mGrabAction; input.grab[hand].type=XR_TYPE_ACTION_STATE_FLOAT;
         CheckXr(xrGetActionStateFloat(mSession,&get,&input.grab[hand]),"xrGetActionStateFloat");
         get.action=mThumbstickAction; input.stick[hand].type=XR_TYPE_ACTION_STATE_VECTOR2F;

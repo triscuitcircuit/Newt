@@ -13,6 +13,8 @@ void SetMediaVolume(float volume);
 uint32_t LiveWidth();
 uint32_t LiveHeight();
 void SetLiveResolution(uint32_t width);
+void SetScreenCaptureBadgeVisible(bool visible);
+bool ScreenCaptureBadgeVisible();
 
 
 struct RetainedObjectDeleter { void operator()(void* object) const noexcept; };
@@ -94,4 +96,4 @@ private:
     RetainedObject mImpl;
 };
 
-#endif // NEWT_CAPTURE_H
+#endif
